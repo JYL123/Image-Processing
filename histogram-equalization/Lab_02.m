@@ -1,92 +1,113 @@
+close all;
+clear all;
+
 FNames = {'meteora_gray.jpg'; 'penang_hill_gray.jpg'; 'foggy_carpark_gray.jpg'};
 
-% upperLeft = A_equalised(1:floor(size(A,2)/2), 1:size(A,2));
-% subplot(3,2,2), imshow(upperLeft, [0,255]);
-% title('hist equalized image');
+% Task 1
 for p = 1 : size(FNames)
-     s = string(FNames(3:1));
-     %cropImage(s)
-     %histogramEqualization(string(FNames(p:1)));
+    figH = figure;
+    baseName = FNames{p}(1:find(FNames{p}=='.')-1); 
+    old_figName = strcat(baseName, '.jpg');
+    
+    % histogram equalization
+    A = imread(old_figName, 'jpg');
+    histogramEqualization(A)
+    
+    figName = strcat(baseName, '_histogram_eq_results.jpg');
+    print(figH, '-djpeg', figName); 
 end
-% histogramEqualization('meteora_gray.jpg');
-% histogramEqualization('penang_hill_gray.jpg');
-% histogramEqualization('foggy_carpark_gray.jpg');
-C = cropImage('meteora_gray.jpg');
-imshow(C)
-histogramEqualization(string(C));
 
-function m = histogramEqualization(pic)
-A = imread(pic, 'jpg');
-%A = imread('meteora_gray.jpg', 'jpg');
-%imshow(A, [0 255]);
-subplot(3,2,1), imshow(A, [0 255]);
-title('original image');
+% Task 2
+for p = 1 : size(FNames)
+    figH = figure;
+    baseName = FNames{p}(1:find(FNames{p}=='.')-1); 
+    old_figName = strcat(baseName, '.jpg');
+ 
+    % cropped picture
+     cropImage(old_figName);
+     
+     croppedFigName = strcat(baseName, '_histogram_eq_results_cropped.jpg');
+     print(figH, '-djpeg', croppedFigName);
+end
 
-% round to integer
-round(A);
-% array of size 256
-histArray=zeros(1,256);
-% get the size of img 
-row = size(A, 1);
-col = size(A, 2);
 
-% construct histogram  
-for r = 1 : row
-    for c = 1:col 
-        intensity = A(r,c);
-        histArray(1,intensity+1)=histArray(1,intensity+1)+1; 
+function histogramEqualization(A)
+    subplot(3,2,1), imshow(A, [0 255]);
+    title('original image');
+
+    % round to integer
+    round(A);
+    % array of size 256
+    histArray=zeros(1,256);
+    % get the size of img 
+    row = size(A, 1);
+    col = size(A, 2);
+
+    % construct histogram  
+    for r = 1 : row
+        for c = 1:col 
+            intensity = A(r,c);
+            histArray(1,intensity+1)=histArray(1,intensity+1)+1; 
+        end
     end
-end
-subplot(3,2,3), bar(histArray)
-title('original histogram');
-% checking: subplot(2,2,3), histogram(A)
+    subplot(3,2,3), plot(histArray)
+    title('original histogram');
 
-% construct cdf
-cdfArray=zeros(1,256);
-cdfArray(1, 1) = histArray(1, 1);
-for i = 2 : length(histArray)
-    frequency = histArray(1,i);
-    cdfArray(1,i) = cdfArray(1,i-1)+frequency;
-end
-subplot(3,2,5), bar(cdfArray);
-title('original cumu hist');
-% to be checked; subplot(2,2,4),cdfplot(A);
+    % construct cdf
+    cdfArray=zeros(1,256);
+    cdfArray(1, 1) = histArray(1, 1);
+    for i = 2 : length(histArray)
+        frequency = histArray(1,i);
+        cdfArray(1,i) = cdfArray(1,i-1)+frequency;
+    end
+    subplot(3,2,5), plot(cdfArray);
+    title('original cumu hist');
 
-%equalization on cdf
-eqArray=zeros(1,256);
-total_size = size(A, 1)*size(A, 2);
-pixels = floor(total_size/256);
-for i = 1 : length(cdfArray)
-    frequency = cdfArray(1,i);
-    eqArray(1,i) = floor(frequency/pixels);
-end
-subplot(3,2,6), bar(eqArray);
-title('equalized cumu hist');
-
-%equalized histogram 
-eqedArray=zeros(1,256);
-eqedArray(1,1) = cdfArray(1,1);
-for i = 2 : length(eqedArray)
-    frequency = cdfArray(1,i);
-    eqedArray(1,i) = frequency - cdfArray(1,i-1);
-end
-subplot(3,2,4), bar(eqedArray);
-title('equalized hist');
-
-
-A_equalised = zeros(size(A, 1), size(A, 2));
- for r = 1 : row
-     for c = 1: col 
-         intensity = A(r,c)+ 1; 
-         A_equalised(r,c)= eqArray(1,intensity); 
+    %equalization on cdf
+    eqArray=zeros(1,256);
+    total_size = size(A, 1)*size(A, 2);
+    pixels = floor(total_size/255);
+    for i = 1 : length(cdfArray)
+        frequency = cdfArray(1,i);
+        eqArray(1,i) = floor(frequency/pixels);
+    end
+    
+    %assign new intensity to replace the original intensity
+    A_equalised = zeros(size(A, 1), size(A, 2));
+     for r = 1 : row
+         for c = 1: col 
+             intensity = A(r,c) + 1; 
+             reassigned_intensity = eqArray(1,intensity);
+             A_equalised(r,c) = reassigned_intensity;
+         end
      end
- end
-subplot(3,2,2), imshow(A_equalised, [0,255]);
-title('hist equalized image');
+    subplot(3,2,2), imshow(A_equalised, [0 255])
+    title('hist equalized histogram');
+
+    % histogram after equalization
+    eqedhist=zeros(1,256);
+    for r = 1 : row
+        for c = 1:col 
+            intensity = A_equalised(r,c); %intensity: 0-255
+            eqedhist(1,intensity+1) = eqedhist(1,intensity+1) + 1;
+        end
+    end
+    subplot(3,2,4), plot(eqedhist);
+    title('hist equalization');
+
+    % equalized cdf
+    edCDF=zeros(1,256);
+    edCDF(1, 1)= eqedhist(1, 1);
+    for i = 2 : length(eqedhist)
+        edCDF(1,i) = edCDF(1,i-1)+ eqedhist(1,i);
+    end
+    subplot(3,2,6), plot(edCDF);
+    title('equalized cumu hist');
+    
 end
 
 function croppedPicture = cropImage(pic)
     A = imread(pic, 'jpg');
-    croppedPicture = A(1:floor(size(A,2)/2), 1:size(A,2));
-    %imshow(croppedPicture, [0 255]);
+    croppedPicture = A(floor(size(A,1)/2):size(A,1), 1:size(A,2));
+    histogramEqualization(croppedPicture)
 end
