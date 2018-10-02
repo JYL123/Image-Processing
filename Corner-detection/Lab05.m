@@ -46,12 +46,15 @@ end
 % compute 2 by 2 matrix for each 13 by 13 sub-matrix
 test=zeros(2, 2);
 egi_min = zeros(520, 520); % min egien value for each block is located at egi_min(r, c), (r,c) is the first pixel location of the block
+egis = zeros(1, 1600); % array to store all the egi values
+egiIndex = 1; % index in array egis 
 IxSquare = 0;
 IySquare = 0;
 IxIy = 0;
-for c = 1 : 520 - 12
+for c = 1 : 13 : 520 - 12 % incremental size = 13
     c_13 = c + 12;
-     for r = 1 : 520 - 12 
+    
+     for r = 1 : 13 : 520 - 12 
          r_13 = r + 12;
          
          % summmation in x direction 
@@ -76,15 +79,17 @@ for c = 1 : 520 - 12
       
         % compute egien-value and find the smallest eigen value
         s = min(eig(test));
-      
-      
-        egi_min(r, c) = s; % (r, c) is the first pixel of every block
-        r = r_13; % go to next 13 by 13 block in x direction 
-          
+        egis(1, egiIndex) = s;  
+        egi_min(r_13, c_13) = s; % (r, c) is the LAST pixel of every block 
+        egiIndex = egiIndex + 1;
      end
-      
-      c = c_13; % go to next 13 by 13 block in y direction
  end
 
-egi_min
+egi_min;
+egisDes = sortrows(egis, -2);
+cutoff = egisDes(1, 200)
+%sum(egi_min(13,:)~=0)
+
+% find the last value for the top 200 values 
+
 
