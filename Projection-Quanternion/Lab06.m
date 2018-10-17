@@ -57,24 +57,49 @@ rpymat_4 = rpyRotation(rpymat_3, w, pi/2, k) % 90 degree
 % rotational axis = [ 0; 1; 0] (3x1 row matrix)
 % rotation degree = 30
 % define q as colnum matrix
-w = [0; 1; 0];
+w = [0; 1; 0]; % rotational axis
+quatmat_1 = [1 0 0; 0 1 0; 0 0 1];
 quatmat_2 = quanRotation(pi/6, w)
 quatmat_3 = quanRotation(pi/3, w)
 quatmat_4 = quanRotation(pi/2, w)
 
-%Projecting the 3D shapes
+%Projecting the 3D points
 nframes = 4;
 npts = size(pts,1);
-U = zeros(nframes, npts); V = zeros(nframes, npts);
+U = zeros(nframes, npts); % 4*3
+V = zeros(nframes, npts); % 4*3
 
-for fr = 1 : nframes
-subplot(2,2,fr), plot(U(fr,:), V(fr,:), '*'); for p = 1 : npts
-text(U(fr,p)+0.02, V(fr,p)+0.02, num2str(p)); end
+%Compute u,v for each 3D point
+for m = 1 : 8
+    Sp = pts(m, : );
+    for i = 1 : nframes
+        Tf = cam_pos(i, : );
+        U(i, : ) = computeU(Sp.', Tf.',quatmat_1(3,:).', quatmat_1(2,:).');
+        V(i, : ) = computeV(Sp.', Tf.',quatmat_1(1,:).', quatmat_1(2,:).');
+    end
+  
+
+    for fr = 1 : nframes  % for each frame
+        subplot(2,2,fr), plot(U(fr,:), V(fr,:), '*'); 
+            for p = 1 : npts % for each point
+                text(U(fr,p)+0.02, V(fr,p)+0.02, num2str(p)); % what is +0.02?
+            end
+    end
 end
 
+% Compute U (horizontal)
+% x, y, z are intrinsic parameters of the camera with y being kf (depth)
+% matrix orientation is formatted as in the lecture notes
+function U = computeU(Sp, Tf, x, y) 
+    U = ((Sp-Tf).' * x)/((Sp-Tf).' * y) + 1;
+end 
 
-
-
+% Compute V (vertical)
+% x, y, z are intrinsic parameters of the camera with y being kf (depth)
+% matrix orientation is formatted as in the lecture notes
+function V = computeV(Sp, Tf, z, y) 
+    V = ((Sp-Tf).' * z)/((Sp-Tf).' * y) + 1;
+end 
 
 
 
