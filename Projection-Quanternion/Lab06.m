@@ -69,16 +69,16 @@ npts = size(pts,1);
 U = zeros(nframes, npts); % 4*3
 V = zeros(nframes, npts); % 4*3
 
-%Compute u,v for each 3D point
+%Compute u,v for each 3D point with perspective model
 for m = 1 : 8
     Sp = pts(m, : );
     for i = 1 : nframes
         Tf = cam_pos(i, : );
-        U(i, : ) = computeU(Sp.', Tf.',quatmat_1(3,:).', quatmat_1(2,:).');
-        V(i, : ) = computeV(Sp.', Tf.',quatmat_1(1,:).', quatmat_1(2,:).');
+        U(i, : ) = computePerspectiveU(Sp.', Tf.',quatmat_1(3,:).', quatmat_1(2,:).');
+        V(i, : ) = computePerspectiveV(Sp.', Tf.',quatmat_1(1,:).', quatmat_1(2,:).');
     end
   
-
+    % figures do not show up for each point!
     for fr = 1 : nframes  % for each frame
         subplot(2,2,fr), plot(U(fr,:), V(fr,:), '*'); 
             for p = 1 : npts % for each point
@@ -87,21 +87,69 @@ for m = 1 : 8
     end
 end
 
-% Compute U (horizontal)
+%Compute u,v for each 3D point with orthographic model
+% figure does not show!!!!
+for m = 1 : 8
+    Sp = pts(m, : );
+    for i = 1 : nframes
+        Tf = cam_pos(i, : );
+        U(i, : ) = computeOrthographicU(Sp.', Tf.',quatmat_1(3,:).');
+        V(i, : ) = computeOrthographicV(Sp.', Tf.',quatmat_1(1,:).');
+    end
+  
+    % figures do not show up for each point!
+    for fr = 1 : nframes  % for each frame
+        subplot(2,2,fr), plot(U(fr,:), V(fr,:), '*'); 
+            for p = 1 : npts % for each point
+                text(U(fr,p)+0.02, V(fr,p)+0.02, num2str(p)); % what is +0.02?
+            end
+    end
+end
+
+% homographic matrix mapping from frame 1 to frame 3 
+transformationResult = homographyMatrixMapping(pts(1, : ).', quatmat_3, cam_pos(3, : ))
+
+% assume rotation: 3*3; translation: 1*3 
+% pFlate is 3*1 row matrix
+function pImage = homographyMatrixMapping (pFlate, rotation, translation)
+ scaling = [1 0 0; 0 1 0; 0 0 1];
+ intrinsicPara = [1 0 1; 0 1 1; 0 0 1];
+ transformation = [rotation(1,1) rotation(1,3) translation(1,1);
+                   rotation(2,1) rotation(2,3) translation(1,2);
+                   rotation(3,1) rotation(3,3) translation(1,3);
+                  ] % transformation on y (depth) is omitted 
+ pImage = intrinsicPara*transformation*scaling*pFlate;
+end
+
+
+% Compute U (horizontal) for orthographic model
 % x, y, z are intrinsic parameters of the camera with y being kf (depth)
 % matrix orientation is formatted as in the lecture notes
-function U = computeU(Sp, Tf, x, y) 
+function U = computeOrthographicU(Sp, Tf, x) 
+    U = ((Sp-Tf).' * x) + 1;
+end
+
+% Compute V (vertical) for orthographic model
+% x, y, z are intrinsic parameters of the camera with y being kf (depth)
+% matrix orientation is formatted as in the lecture notes
+function V = computeOrthographicV(Sp, Tf, z) 
+    V = ((Sp-Tf).' * z) + 1;
+end
+
+
+% Compute U (horizontal) for perspective model
+% x, y, z are intrinsic parameters of the camera with y being kf (depth)
+% matrix orientation is formatted as in the lecture notes
+function U = computePerspectiveU(Sp, Tf, x, y) 
     U = ((Sp-Tf).' * x)/((Sp-Tf).' * y) + 1;
 end 
 
-% Compute V (vertical)
+% Compute V (vertical) for perspective model
 % x, y, z are intrinsic parameters of the camera with y being kf (depth)
 % matrix orientation is formatted as in the lecture notes
-function V = computeV(Sp, Tf, z, y) 
+function V = computePerspectiveV(Sp, Tf, z, y) 
     V = ((Sp-Tf).' * z)/((Sp-Tf).' * y) + 1;
 end 
-
-
 
 % quanternion rotation 
 % 1x4 column matrix as quanternion, rotational degree as theta, rotational
