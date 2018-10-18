@@ -49,9 +49,9 @@ w = 0;
 phi = pi/6;
 k = 0;
 rpymat_1 = [1 0 0; 0 1 0; 0 0 1];
-rpymat_2 = rpyRotation(rpymat_1, w, pi/6, k) % 30 degree
-rpymat_3 = rpyRotation(rpymat_2, w, pi/3, k) % 60 degree
-rpymat_4 = rpyRotation(rpymat_3, w, pi/2, k) % 90 degree
+rpymat_2 = rpyRotation(w, pi/6, k) % 30 degree
+rpymat_3 = rpyRotation(w, pi/3, k) % 60 degree
+rpymat_4 = rpyRotation(w, pi/2, k) % 90 degree
 
 % rotation represented by quanternion
 % rotational axis = [ 0; 1; 0] (3x1 row matrix)
@@ -62,6 +62,12 @@ quatmat_1 = [1 0 0; 0 1 0; 0 0 1];
 quatmat_2 = quanRotation(pi/6, w)
 quatmat_3 = quanRotation(pi/3, w)
 quatmat_4 = quanRotation(pi/2, w)
+
+%checking rpy and quan
+frame1= rpymat_1 - quatmat_1
+frame2 = rpymat_2 - quatmat_2
+frame3 = rpymat_3 - quatmat_3
+frame4 = rpymat_4 - quatmat_4
 
 %Projecting the 3D points
 nframes = 4;
@@ -112,13 +118,15 @@ transformationResult = homographyMatrixMapping(pts(1, : ).', quatmat_3, cam_pos(
 % assume rotation: 3*3; translation: 1*3 
 % pFlate is 3*1 row matrix
 function pImage = homographyMatrixMapping (pFlate, rotation, translation)
- scaling = [1 0 0; 0 1 0; 0 0 1];
- intrinsicPara = [1 0 1; 0 1 1; 0 0 1];
- transformation = [rotation(1,1) rotation(1,3) translation(1,1);
-                   rotation(2,1) rotation(2,3) translation(1,2);
-                   rotation(3,1) rotation(3,3) translation(1,3);
-                  ] % transformation on y (depth) is omitted 
- pImage = intrinsicPara*transformation*scaling*pFlate;
+    scaling = [1 0 0; 0 1 0; 0 0 1];
+    intrinsicPara = [1 0 1; 0 1 1; 0 0 1];
+    transformation = [rotation(1,1) rotation(1,3) translation(1,1);
+                      rotation(2,1) rotation(2,3) translation(1,2);
+                      rotation(3,1) rotation(3,3) translation(1,3);
+                   ] % transformation on y (depth) is omitted 
+    pImage = intrinsicPara*transformation*scaling*pFlate;
+    H = intrinsicPara*transformation*scaling;
+    pImage = pImage/H(3,3);
 end
 
 
@@ -164,9 +172,9 @@ q = [cos(theta/2) sin(theta/2)*w(1,1) sin(theta/2)*w(2,1) sin(theta/2)*w(3,1)];
 end
 
 %rpy rotation with phi = pi/6
-function Rt = rpyRotation(R0, w, phi, k)
+function Rt = rpyRotation(w, phi, k)
     Rt = [
-    cos(k)*cos(phi) cos(k)*sin(phi)-sin(k)*cos(w) cos(k)*sin(phi)*cos(w)+sin(k)*sin(w);     
+    cos(k)*cos(phi) cos(k)*sin(phi)*sin(w)-sin(k)*cos(w) cos(k)*sin(phi)*cos(w)+sin(k)*sin(w);     
     sin(k)*cos(phi) sin(k)*sin(phi)*sin(w)+cos(k)*cos(w) sin(k)*sin(phi)*cos(w)-cos(k)*sin(w);
     -sin(phi) cos(phi)*sin(w) cos(phi)*cos(w);
     ];
