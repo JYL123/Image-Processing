@@ -75,21 +75,19 @@ npts = size(pts,1);
 U = zeros(nframes, npts); % 4*3
 V = zeros(nframes, npts); % 4*3
 
-%Compute u,v for each 3D point with perspective model for 4 frames
+% Compute u,v for each 3D point with perspective model for 4 frames
+% for frame1, compute (u, v)
 for m = 1 : 8
     Sp = pts(m, : );
-    
-    % for frame1, compute (u, v)
     Tf = cam_pos(1, : );
     U(1, m) = computePerspectiveU(Sp.', Tf.',quatmat_1(1,:).', quatmat_1(3,:).');
     V(1, m) = computePerspectiveV(Sp.', Tf.',quatmat_1(2,:).', quatmat_1(3,:).');
     
 end
 
+% for frame2, compute (u, v)
 for m = 1 : 8
     Sp = pts(m, : );
-    
-    % for frame2, compute (u, v)
     Tf = cam_pos(2, : );
     U(2, m ) = computePerspectiveU(Sp.', Tf.',quatmat_2(1,:).', quatmat_2(3,:).');
     V(2, m ) = computePerspectiveV(Sp.', Tf.',quatmat_2(2,:).', quatmat_2(3,:).');
@@ -126,14 +124,10 @@ end
  end
 
 % homographic matrix mapping from frame 1 to frame 3 
-% transformationResult = homographyMatrixMapping(pts(1, : ).', quatmat_3, cam_pos(3, : ))
-
 M = zeros(8, 9);
-% test
-
 % 3d point projects on the plane, up, vp, zp
 p1 = pts(1, : );
-c1 = cam_pos(3, : )
+c1 = cam_pos(3, : );
 % 3d point projects on frame3
 uc = computePerspectiveU(p1.', c1.',quatmat_3(1,:).', quatmat_3(3,:).')
 vc = computePerspectiveV(p1.', c1.',quatmat_3(2,:).', quatmat_3(3,:).')
@@ -172,20 +166,19 @@ M(7, : ) = homographyMatrixMappingOnU (p4(1,1), p4(1,2), p4(1,3), uc);
 M(8, : ) = homographyMatrixMappingOnV (p4(1,1), p4(1,2), p4(1,3), vc);
 
 M
-[Ua, Sa, Va] = svd(M);
-Sa
-Va
+[U, S, V] = svd(M);
+V
 
-H = [Va(9, 1) Va(9, 2) Va(9, 3); Va(9, 4) Va(9, 5) Va(9, 6); Va(9, 7) Va(9, 8) Va(9, 9);];
-H = H/Va(9, 9)
+H = [V(9, 1) V(9, 2) V(9, 3); V(9, 4) V(9, 5) V(9, 6); V(9, 7) V(9, 8) V(9, 9);];
+H = H/V(9, 9)
 ans = H*pts(1, : ).'
 
 U = zeros(nframes, npts); % 4*3
 V = zeros(nframes, npts); % 4*3
 Sp = pts(1, : );
 Tf = cam_pos(3, : );
-u3 = computePerspectiveU(Sp.', Tf.',quatmat_3(3,:).', quatmat_3(2,:).')
-v3 = computePerspectiveV(Sp.', Tf.',quatmat_3(1,:).', quatmat_3(2,:).')
+u3 = computePerspectiveU(Sp.', Tf.',quatmat_3(1,:).', quatmat_3(3,:).')
+v3 = computePerspectiveV(Sp.', Tf.',quatmat_3(2,:).', quatmat_3(3,:).')
 
 
 % assume rotation: 3*3; translation: 1*3 
@@ -202,32 +195,32 @@ end
 
 
 % Compute U (horizontal) for orthographic model
-% x, y, z are intrinsic parameters of the camera with y being kf (depth)
+% x, y, z are intrinsic parameters of the camera with z being kf (depth)
 % matrix orientation is formatted as in the lecture notes
 function U = computeOrthographicU(Sp, Tf, x) 
-    U = ((Sp-Tf).' * x) + 1;
+    U = ((Sp-Tf).' * x);
 end
 
 % Compute V (vertical) for orthographic model
-% x, y, z are intrinsic parameters of the camera with y being kf (depth)
+% x, y, z are intrinsic parameters of the camera with z being kf (depth)
 % matrix orientation is formatted as in the lecture notes
-function V = computeOrthographicV(Sp, Tf, z) 
-    V = ((Sp-Tf).' * z) + 1;
+function V = computeOrthographicV(Sp, Tf, y) 
+    V = ((Sp-Tf).' * y);
 end
 
 
 % Compute U (horizontal) for perspective model
-% x, y, z are intrinsic parameters of the camera with y being kf (depth)
+% x, y, z are intrinsic parameters of the camera with z being kf (depth)
 % matrix orientation is formatted as in the lecture notes
-function U = computePerspectiveU(Sp, Tf, x, y) 
-    U = ((Sp-Tf).' * x)/((Sp-Tf).' * y) + 1;
+function U = computePerspectiveU(Sp, Tf, x, z) 
+    U = ((Sp-Tf).' * x)/((Sp-Tf).' * z);
 end 
 
 % Compute V (vertical) for perspective model
-% x, y, z are intrinsic parameters of the camera with y being kf (depth)
+% x, y, z are intrinsic parameters of the camera with z being kf (depth)
 % matrix orientation is formatted as in the lecture notes
-function V = computePerspectiveV(Sp, Tf, z, y) 
-    V = ((Sp-Tf).' * z)/((Sp-Tf).' * y) + 1;
+function V = computePerspectiveV(Sp, Tf, y, z) 
+    V = ((Sp-Tf).' * y)/((Sp-Tf).' * z);
 end 
 
 % quanternion rotation 
