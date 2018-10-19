@@ -113,73 +113,69 @@ for m = 1 : 8
     V(4, m ) = computePerspectiveV(Sp.', Tf.',quatmat_4(2,:).', quatmat_4(3,:).');
     
 end
-   
 
 %show figure
  for fr = 1 : nframes  % for each frame
      subplot(2,2,fr), plot(U(fr,:), V(fr,:), '*'); 
      for p = 1 : npts % for each point
-          text(U(fr,p)+0.02, V(fr,p)+0.02, num2str(p)); % what is +0.02?
+          text(U(fr,p)+0.02, V(fr,p)+0.02, num2str(p)); 
      end
  end
 
-% homographic matrix mapping from frame 1 to frame 3 
+% homographic matrix mapping from flate plane pattern to frame 3 
 M = zeros(8, 9);
 % 3d point projects on the plane, up, vp, zp
-p1 = pts(1, : );
-c1 = cam_pos(3, : );
+c = cam_pos(3, : );
 % 3d point projects on frame3
-uc = computePerspectiveU(p1.', c1.',quatmat_3(1,:).', quatmat_3(3,:).')
-vc = computePerspectiveV(p1.', c1.',quatmat_3(2,:).', quatmat_3(3,:).')
+p1 = pts(1, : );
+uc = computePerspectiveU(p1.', c.',quatmat_3(1,:).', quatmat_3(3,:).')
+vc = computePerspectiveV(p1.', c.',quatmat_3(2,:).', quatmat_3(3,:).')
 % construct M
 M(1, : ) = homographyMatrixMappingOnU (p1(1,1), p1(1,2), p1(1,3), uc);
 M(2, : ) = homographyMatrixMappingOnV (p1(1,1), p1(1,2), p1(1,3), vc);
 
 % 3d point projects on the plane, up, vp, zp
 p2 = pts(2, : );
-c2 = cam_pos(3, : );
 % 3d point projects on frame3
-uc = computePerspectiveU(p2.', c2.',quatmat_3(1,:).', quatmat_3(3,:).');
-vc = computePerspectiveV(p2.', c2.',quatmat_3(2,:).', quatmat_3(3,:).');
+uc = computePerspectiveU(p2.', c.',quatmat_3(1,:).', quatmat_3(3,:).');
+vc = computePerspectiveV(p2.', c.',quatmat_3(2,:).', quatmat_3(3,:).');
 % construct M
 M(3, : ) = homographyMatrixMappingOnU (p2(1,1), p2(1,2), p2(1,3), uc);
 M(4, : ) = homographyMatrixMappingOnV (p2(1,1), p2(1,2), p2(1,3), vc);
 
 % 3d point projects on the plane, up, vp, zp
 p3 = pts(3, : );
-c3 = cam_pos(3, : );
 % 3d point projects on frame3
-uc = computePerspectiveU(p3.', c3.',quatmat_3(1,:).', quatmat_3(3,:).');
-vc = computePerspectiveV(p3.', c3.',quatmat_3(2,:).', quatmat_3(3,:).');
+uc = computePerspectiveU(p3.', c.',quatmat_3(1,:).', quatmat_3(3,:).');
+vc = computePerspectiveV(p3.', c.',quatmat_3(2,:).', quatmat_3(3,:).');
 % construct M
 M(5, : ) = homographyMatrixMappingOnU (p3(1,1), p3(1,2), p3(1,3), uc);
 M(6, : ) = homographyMatrixMappingOnV (p3(1,1), p3(1,2), p3(1,3), vc);
 
 % 3d point projects on the plane, up, vp, zp
 p4 = pts(4, : );
-c4 = cam_pos(3, : );
 % 3d point projects on frame3
-uc = computePerspectiveU(p4.', c4.',quatmat_3(1,:).', quatmat_3(3,:).');
-vc = computePerspectiveV(p4.', c4.',quatmat_3(2,:).', quatmat_3(3,:).');
+uc = computePerspectiveU(p4.', c.',quatmat_3(1,:).', quatmat_3(3,:).');
+vc = computePerspectiveV(p4.', c.',quatmat_3(2,:).', quatmat_3(3,:).');
 % construct M
 M(7, : ) = homographyMatrixMappingOnU (p4(1,1), p4(1,2), p4(1,3), uc);
 M(8, : ) = homographyMatrixMappingOnV (p4(1,1), p4(1,2), p4(1,3), vc);
 
 M
 [U, S, V] = svd(M);
+S
 V
 
-H = [V(9, 1) V(9, 2) V(9, 3); V(9, 4) V(9, 5) V(9, 6); V(9, 7) V(9, 8) V(9, 9);];
+H = [V(1, 9) V(2, 9) V(3, 9); V(4, 9) V(5, 9) V(6, 9); V(7, 9) V(8, 9) V(9, 9);]
 H = H/V(9, 9)
 ans = H*pts(1, : ).'
 
-U = zeros(nframes, npts); % 4*3
-V = zeros(nframes, npts); % 4*3
-Sp = pts(1, : );
-Tf = cam_pos(3, : );
-u3 = computePerspectiveU(Sp.', Tf.',quatmat_3(1,:).', quatmat_3(3,:).')
-v3 = computePerspectiveV(Sp.', Tf.',quatmat_3(2,:).', quatmat_3(3,:).')
-
+ U = zeros(nframes, npts); % 4*3
+ V = zeros(nframes, npts); % 4*3
+ Sp = pts(1, : );
+ Tf = cam_pos(3, : );
+ u3 = computePerspectiveU(Sp.', Tf.',quatmat_3(1,:).', quatmat_3(3,:).')
+ v3 = computePerspectiveV(Sp.', Tf.',quatmat_3(2,:).', quatmat_3(3,:).')
 
 % assume rotation: 3*3; translation: 1*3 
 % pFlate is 3*1 row matrix
