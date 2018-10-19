@@ -121,6 +121,53 @@ end
           text(U(fr,p)+0.02, V(fr,p)+0.02, num2str(p)); 
      end
  end
+ 
+% Compute u,v for each 3D point with orthographic model for 4 frames
+% for frame1, compute (u, v)
+for m = 1 : 8
+    Sp = pts(m, : );
+    Tf = cam_pos(1, : );
+    U(1, m) = computeOrthographicU(Sp.', Tf.',quatmat_1(1,:).');
+    V(1, m) = computeOrthographicV(Sp.', Tf.',quatmat_1(2,:).');
+    
+end
+
+% for frame2, compute (u, v)
+for m = 1 : 8
+    Sp = pts(m, : );
+    Tf = cam_pos(2, : );
+    U(2, m ) = computeOrthographicU(Sp.', Tf.',quatmat_2(1,:).');
+    V(2, m ) = computeOrthographicV(Sp.', Tf.',quatmat_2(2,:).');
+    
+end
+
+for m = 1 : 8
+    Sp = pts(m, : );
+    
+   % for frame3, compute (u, v)
+    Tf = cam_pos(3, : );
+    U(3, m ) = computeOrthographicU(Sp.', Tf.',quatmat_3(1,:).');
+    V(3, m ) = computeOrthographicV(Sp.', Tf.',quatmat_3(2,:).');
+    
+end
+
+for m = 1 : 8
+    Sp = pts(m, : );
+    
+   % for frame4, compute (u, v)
+    Tf = cam_pos(4, : );
+    U(4, m ) = computeOrthographicU(Sp.', Tf.',quatmat_4(1,:).');
+    V(4, m ) = computeOrthographicV(Sp.', Tf.',quatmat_4(2,:).');
+    
+end
+
+%show figure
+ for fr = 1 : nframes  % for each frame
+     subplot(2,2,fr), plot(U(fr,:), V(fr,:), '*'); 
+     for p = 1 : npts % for each point
+          text(U(fr,p)+0.02, V(fr,p)+0.02, num2str(p)); 
+     end
+ end
 
 % homographic matrix mapping from flate plane pattern to frame 3 
 M = zeros(8, 9);
@@ -161,21 +208,14 @@ vc = computePerspectiveV(p4.', c.',quatmat_3(2,:).', quatmat_3(3,:).');
 M(7, : ) = homographyMatrixMappingOnU (p4(1,1), p4(1,2), p4(1,3), uc);
 M(8, : ) = homographyMatrixMappingOnV (p4(1,1), p4(1,2), p4(1,3), vc);
 
-M
+% svd
 [U, S, V] = svd(M);
-S
-V
-
-H = [V(1, 9) V(2, 9) V(3, 9); V(4, 9) V(5, 9) V(6, 9); V(7, 9) V(8, 9) V(9, 9);]
+% get the last row of transpose = get the last col
+H = [V(1, 9) V(2, 9) V(3, 9); V(4, 9) V(5, 9) V(6, 9); V(7, 9) V(8, 9) V(9, 9);];
+% normalization
 H = H/V(9, 9)
-ans = H*pts(1, : ).'
-
- U = zeros(nframes, npts); % 4*3
- V = zeros(nframes, npts); % 4*3
- Sp = pts(1, : );
- Tf = cam_pos(3, : );
- u3 = computePerspectiveU(Sp.', Tf.',quatmat_3(1,:).', quatmat_3(3,:).')
- v3 = computePerspectiveV(Sp.', Tf.',quatmat_3(2,:).', quatmat_3(3,:).')
+%checking
+ans = H*pts(1, : ).';
 
 % assume rotation: 3*3; translation: 1*3 
 % pFlate is 3*1 row matrix
