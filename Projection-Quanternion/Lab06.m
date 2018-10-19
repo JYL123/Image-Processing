@@ -2,14 +2,14 @@ close all;
 clear all;
 
 pts = zeros(8, 3);
-pts(1, : ) = [-1 -1 -1]; 
+pts(1,: ) = [-1 -1 -1]; 
 pts(2,: ) = [1 -1 -1];
-pts(3,: ) = [1 -1 -1];
-pts(4,: ) = [1 -1 -1];
-pts(5,: ) = [1 -1 -1];
-pts(6,: ) = [1 -1 -1];
-pts(7,: ) = [1 -1 -1];
-pts(8,: ) = [1 -1 -1];
+pts(3,: ) = [1 1 -1];
+pts(4,: ) = [-1 1 -1];
+pts(5,: ) = [-1 -1 1];
+pts(6,: ) = [1 -1 1];
+pts(7,: ) = [1 1 1];
+pts(8,: ) = [-1 1 1];
 
 % represent camera position in a world coordination
 initialPosition = [0 0 -5]; % add Sp = 0
@@ -22,7 +22,7 @@ cam_pos(1, : ) = [ 0 0 -5];
 %first rotation 
 %R1= rotate(r, n, theta);
 %cam_pos(2, : ) = [R1(2,1) R1(3,1) R1(4,1)];
-R1 = rotateByEquation(r, n, theta);
+R1 = rotateByEquation(r, n, -theta);
 cam_pos(2, : ) = R1.';
 
 %second rotation
@@ -30,7 +30,7 @@ cam_pos(2, : ) = R1.';
 %R2= rotate(R1, n, theta);
 %cam_pos(3, : ) = [R2(2,1) R2(3,1) R2(4,1)];
 R1 = [0 R1(1,1) R1(2,1) R1(3,1)];
-R2 = rotateByEquation(R1, n, theta);
+R2 = rotateByEquation(R1, n, -theta);
 cam_pos(3, : ) = R2.';
 
 %third rotation
@@ -38,7 +38,7 @@ cam_pos(3, : ) = R2.';
 %R3= rotate(R2, n, theta);
 %cam_pos(4, : ) = [R3(2,1) R3(3,1) R3(4,1)];
 R2 = [0 R2(1,1) R2(2,1) R2(3,1)];
-R3 = rotateByEquation(R2, n, theta);
+R3 = rotateByEquation(R2, n, -theta);
 cam_pos(4, : ) = R3.';
 cam_pos
 
@@ -58,7 +58,7 @@ rpymat_4 = rpyRotation(w, pi/2, k) % 90 degree
 % rotation degree = 30
 % define q as colnum matrix
 w = [0; 1; 0]; % rotational axis
-quatmat_1 = [1 0 0; 0 1 0; 0 0 1];
+quatmat_1 = [1 0 0; 0 1 0; 0 0 1]; % rotation matrix: [x, y, z] x = 100, y=010, z=001
 quatmat_2 = quanRotation(pi/6, w)
 quatmat_3 = quanRotation(pi/3, w)
 quatmat_4 = quanRotation(pi/2, w)
@@ -75,58 +75,129 @@ npts = size(pts,1);
 U = zeros(nframes, npts); % 4*3
 V = zeros(nframes, npts); % 4*3
 
-%Compute u,v for each 3D point with perspective model
+%Compute u,v for each 3D point with perspective model for 4 frames
 for m = 1 : 8
     Sp = pts(m, : );
-    for i = 1 : nframes
-        Tf = cam_pos(i, : );
-        U(i, : ) = computePerspectiveU(Sp.', Tf.',quatmat_1(3,:).', quatmat_1(2,:).');
-        V(i, : ) = computePerspectiveV(Sp.', Tf.',quatmat_1(1,:).', quatmat_1(2,:).');
-    end
-  
-    % figures do not show up for each point!
-    for fr = 1 : nframes  % for each frame
-        subplot(2,2,fr), plot(U(fr,:), V(fr,:), '*'); 
-            for p = 1 : npts % for each point
-                text(U(fr,p)+0.02, V(fr,p)+0.02, num2str(p)); % what is +0.02?
-            end
-    end
+    
+    % for frame1, compute (u, v)
+    Tf = cam_pos(1, : );
+    U(1, m) = computePerspectiveU(Sp.', Tf.',quatmat_1(1,:).', quatmat_1(3,:).');
+    V(1, m) = computePerspectiveV(Sp.', Tf.',quatmat_1(2,:).', quatmat_1(3,:).');
+    
 end
 
-%Compute u,v for each 3D point with orthographic model
-% figure does not show!!!!
 for m = 1 : 8
     Sp = pts(m, : );
-    for i = 1 : nframes
-        Tf = cam_pos(i, : );
-        U(i, : ) = computeOrthographicU(Sp.', Tf.',quatmat_1(3,:).');
-        V(i, : ) = computeOrthographicV(Sp.', Tf.',quatmat_1(1,:).');
-    end
-  
-    % figures do not show up for each point!
-    for fr = 1 : nframes  % for each frame
-        subplot(2,2,fr), plot(U(fr,:), V(fr,:), '*'); 
-            for p = 1 : npts % for each point
-                text(U(fr,p)+0.02, V(fr,p)+0.02, num2str(p)); % what is +0.02?
-            end
-    end
+    
+    % for frame2, compute (u, v)
+    Tf = cam_pos(2, : );
+    U(2, m ) = computePerspectiveU(Sp.', Tf.',quatmat_2(1,:).', quatmat_2(3,:).');
+    V(2, m ) = computePerspectiveV(Sp.', Tf.',quatmat_2(2,:).', quatmat_2(3,:).');
+    
 end
+
+for m = 1 : 8
+    Sp = pts(m, : );
+    
+   % for frame3, compute (u, v)
+    Tf = cam_pos(3, : );
+    U(3, m ) = computePerspectiveU(Sp.', Tf.',quatmat_3(1,:).', quatmat_3(3,:).');
+    V(3, m ) = computePerspectiveV(Sp.', Tf.',quatmat_3(2,:).', quatmat_3(3,:).');
+    
+end
+
+for m = 1 : 8
+    Sp = pts(m, : );
+    
+   % for frame4, compute (u, v)
+    Tf = cam_pos(4, : );
+    U(4, m ) = computePerspectiveU(Sp.', Tf.',quatmat_4(1,:).', quatmat_4(3,:).');
+    V(4, m ) = computePerspectiveV(Sp.', Tf.',quatmat_4(2,:).', quatmat_4(3,:).');
+    
+end
+   
+
+%show figure
+ for fr = 1 : nframes  % for each frame
+     subplot(2,2,fr), plot(U(fr,:), V(fr,:), '*'); 
+     for p = 1 : npts % for each point
+          text(U(fr,p)+0.02, V(fr,p)+0.02, num2str(p)); % what is +0.02?
+     end
+ end
 
 % homographic matrix mapping from frame 1 to frame 3 
-transformationResult = homographyMatrixMapping(pts(1, : ).', quatmat_3, cam_pos(3, : ))
+% transformationResult = homographyMatrixMapping(pts(1, : ).', quatmat_3, cam_pos(3, : ))
+
+M = zeros(8, 9);
+% test
+
+% 3d point projects on the plane, up, vp, zp
+p1 = pts(1, : );
+c1 = cam_pos(3, : )
+% 3d point projects on frame3
+uc = computePerspectiveU(p1.', c1.',quatmat_3(1,:).', quatmat_3(3,:).')
+vc = computePerspectiveV(p1.', c1.',quatmat_3(2,:).', quatmat_3(3,:).')
+% construct M
+M(1, : ) = homographyMatrixMappingOnU (p1(1,1), p1(1,2), p1(1,3), uc);
+M(2, : ) = homographyMatrixMappingOnV (p1(1,1), p1(1,2), p1(1,3), vc);
+
+% 3d point projects on the plane, up, vp, zp
+p2 = pts(2, : );
+c2 = cam_pos(3, : );
+% 3d point projects on frame3
+uc = computePerspectiveU(p2.', c2.',quatmat_3(1,:).', quatmat_3(3,:).');
+vc = computePerspectiveV(p2.', c2.',quatmat_3(2,:).', quatmat_3(3,:).');
+% construct M
+M(3, : ) = homographyMatrixMappingOnU (p2(1,1), p2(1,2), p2(1,3), uc);
+M(4, : ) = homographyMatrixMappingOnV (p2(1,1), p2(1,2), p2(1,3), vc);
+
+% 3d point projects on the plane, up, vp, zp
+p3 = pts(3, : );
+c3 = cam_pos(3, : );
+% 3d point projects on frame3
+uc = computePerspectiveU(p3.', c3.',quatmat_3(1,:).', quatmat_3(3,:).');
+vc = computePerspectiveV(p3.', c3.',quatmat_3(2,:).', quatmat_3(3,:).');
+% construct M
+M(5, : ) = homographyMatrixMappingOnU (p3(1,1), p3(1,2), p3(1,3), uc);
+M(6, : ) = homographyMatrixMappingOnV (p3(1,1), p3(1,2), p3(1,3), vc);
+
+% 3d point projects on the plane, up, vp, zp
+p4 = pts(4, : );
+c4 = cam_pos(3, : );
+% 3d point projects on frame3
+uc = computePerspectiveU(p4.', c4.',quatmat_3(1,:).', quatmat_3(3,:).');
+vc = computePerspectiveV(p4.', c4.',quatmat_3(2,:).', quatmat_3(3,:).');
+% construct M
+M(7, : ) = homographyMatrixMappingOnU (p4(1,1), p4(1,2), p4(1,3), uc);
+M(8, : ) = homographyMatrixMappingOnV (p4(1,1), p4(1,2), p4(1,3), vc);
+
+M
+[Ua, Sa, Va] = svd(M);
+Sa
+Va
+
+H = [Va(9, 1) Va(9, 2) Va(9, 3); Va(9, 4) Va(9, 5) Va(9, 6); Va(9, 7) Va(9, 8) Va(9, 9);];
+H = H/Va(9, 9)
+ans = H*pts(1, : ).'
+
+U = zeros(nframes, npts); % 4*3
+V = zeros(nframes, npts); % 4*3
+Sp = pts(1, : );
+Tf = cam_pos(3, : );
+u3 = computePerspectiveU(Sp.', Tf.',quatmat_3(3,:).', quatmat_3(2,:).')
+v3 = computePerspectiveV(Sp.', Tf.',quatmat_3(1,:).', quatmat_3(2,:).')
+
 
 % assume rotation: 3*3; translation: 1*3 
 % pFlate is 3*1 row matrix
-function pImage = homographyMatrixMapping (pFlate, rotation, translation)
-    scaling = [1 0 0; 0 1 0; 0 0 1];
-    intrinsicPara = [1 0 1; 0 1 1; 0 0 1];
-    transformation = [rotation(1,1) rotation(1,3) translation(1,1);
-                      rotation(2,1) rotation(2,3) translation(1,2);
-                      rotation(3,1) rotation(3,3) translation(1,3);
-                   ] % transformation on y (depth) is omitted 
-    pImage = intrinsicPara*transformation*scaling*pFlate;
-    H = intrinsicPara*transformation*scaling;
-    pImage = pImage/H(3,3);
+% p1: up, vp
+% p3: uc, vp
+function U = homographyMatrixMappingOnU (x, y, z, uc)
+    U = [x y z 0 0 0 -uc*x -uc*y -uc*z];
+end
+
+function V = homographyMatrixMappingOnV (x, y, z, vc)
+    V = [0 0 0 x y z -vc*x -vc*y -vc*z];
 end
 
 
