@@ -10,45 +10,54 @@ pts(5,: ) = [-1 -1 1];
 pts(6,: ) = [1 -1 1];
 pts(7,: ) = [1 1 1];
 pts(8,: ) = [-1 1 1];
+disp('Q1');
+disp('=====================================================================');
+disp('3D points:');
+pts
 
-% represent camera position in a world coordination
-initialPosition = [0 0 -5]; % add Sp = 0
+initialPosition = [0 0 -5];
 theta = pi/6; % rotation angle
 n = [0; 1; 0]; % rotation axis
-r = [0 initialPosition(1,1) initialPosition(1,2) initialPosition(1,3)];
+r = [0 initialPosition(1,1) initialPosition(1,2) initialPosition(1,3)]; % add sp=0
 cam_pos = zeros( 4, 3);
 cam_pos(1, : ) = [ 0 0 -5];
 
+% quanternion multiplication
 %first rotation 
-%R1= rotate(r, n, theta);
-%cam_pos(2, : ) = [R1(2,1) R1(3,1) R1(4,1)];
-R1 = rotateByEquation(r, n, -theta);
+R1 = rotateByEquation(r, n, -theta)
 cam_pos(2, : ) = R1.';
 
 %second rotation
-%R1 = R1.';
-%R2= rotate(R1, n, theta);
-%cam_pos(3, : ) = [R2(2,1) R2(3,1) R2(4,1)];
 R1 = [0 R1(1,1) R1(2,1) R1(3,1)];
 R2 = rotateByEquation(R1, n, -theta);
 cam_pos(3, : ) = R2.';
 
 %third rotation
-%R2 = R2.';
-%R3= rotate(R2, n, theta);
-%cam_pos(4, : ) = [R3(2,1) R3(3,1) R3(4,1)];
 R2 = [0 R2(1,1) R2(2,1) R2(3,1)];
 R3 = rotateByEquation(R2, n, -theta);
 cam_pos(4, : ) = R3.';
-cam_pos
 
+disp('Q2');
+disp('=====================================================================');
+disp('camera location 1:');
+cam_pos(1,: )
+disp('camera location 2:');
+cam_pos(2,: )
+disp('camera location 3:');
+cam_pos(3,: )
+disp('camera location 4:');
+cam_pos(4,: )
+
+disp('Q3');
+disp('=====================================================================');
 % use roll, pitch and yaw to represent rotation
 % represent world coordination in a camera perspective?
 % w = 0; phi = 30 degree (pi/6) (for the first rotation); k = 0;
 w = 0;
 phi = pi/6;
 k = 0;
-rpymat_1 = [1 0 0; 0 1 0; 0 0 1];
+disp('using roll, pitch and yaw representation for rotation, the computed matrices are : ');
+rpymat_1 = [1 0 0; 0 1 0; 0 0 1]
 rpymat_2 = rpyRotation(w, pi/6, k) % 30 degree
 rpymat_3 = rpyRotation(w, pi/3, k) % 60 degree
 rpymat_4 = rpyRotation(w, pi/2, k) % 90 degree
@@ -58,17 +67,22 @@ rpymat_4 = rpyRotation(w, pi/2, k) % 90 degree
 % rotation degree = 30
 % define q as colnum matrix
 w = [0; 1; 0]; % rotational axis
-quatmat_1 = [1 0 0; 0 1 0; 0 0 1]; % rotation matrix: [x, y, z] x = 100, y=010, z=001
+disp('using quaternion representation for rotation, the computed matrices are : ');
+quatmat_1 = [1 0 0; 0 1 0; 0 0 1] % rotation matrix: [x, y, z] x = 100, y=010, z=001
 quatmat_2 = quanRotation(pi/6, w)
 quatmat_3 = quanRotation(pi/3, w)
 quatmat_4 = quanRotation(pi/2, w)
 
 %checking rpy and quan
+disp('Verfication: ');
 frame1= rpymat_1 - quatmat_1
 frame2 = rpymat_2 - quatmat_2
 frame3 = rpymat_3 - quatmat_3
 frame4 = rpymat_4 - quatmat_4
 
+disp('Q4');
+disp('=====================================================================');
+disp('Please note that 2 projection model figures are saved in the folder. The displayed figure when the program is executed is only orthographic model.')
 %Projecting the 3D points
 nframes = 4;
 npts = size(pts,1);
@@ -122,7 +136,7 @@ end
      end
  end
  
-% Compute u,v for each 3D point with orthographic model for 4 frames
+ % Compute u,v for each 3D point with orthographic model for 4 frames
 % for frame1, compute (u, v)
 for m = 1 : 8
     Sp = pts(m, : );
@@ -169,14 +183,18 @@ end
      end
  end
 
+
+disp(' ');
+disp('Q5');
+disp('=====================================================================');
 % homographic matrix mapping from flate plane pattern to frame 3 
 M = zeros(8, 9);
 % 3d point projects on the plane, up, vp, zp
 c = cam_pos(3, : );
 % 3d point projects on frame3
 p1 = pts(1, : );
-uc = computePerspectiveU(p1.', c.',quatmat_3(1,:).', quatmat_3(3,:).')
-vc = computePerspectiveV(p1.', c.',quatmat_3(2,:).', quatmat_3(3,:).')
+uc = computePerspectiveU(p1.', c.',quatmat_3(1,:).', quatmat_3(3,:).');
+vc = computePerspectiveV(p1.', c.',quatmat_3(2,:).', quatmat_3(3,:).');
 % construct M
 M(1, : ) = homographyMatrixMappingOnU (p1(1,1), p1(1,2), p1(1,3), uc);
 M(2, : ) = homographyMatrixMappingOnV (p1(1,1), p1(1,2), p1(1,3), vc);
@@ -213,9 +231,12 @@ M(8, : ) = homographyMatrixMappingOnV (p4(1,1), p4(1,2), p4(1,3), vc);
 % get the last row of transpose = get the last col
 H = [V(1, 9) V(2, 9) V(3, 9); V(4, 9) V(5, 9) V(6, 9); V(7, 9) V(8, 9) V(9, 9);];
 % normalization
-H = H/V(9, 9)
+H = H/V(9, 9);
 %checking
 ans = H*pts(1, : ).';
+
+disp('Nomalized homography matrix:');
+H
 
 % assume rotation: 3*3; translation: 1*3 
 % pFlate is 3*1 row matrix
@@ -228,7 +249,6 @@ end
 function V = homographyMatrixMappingOnV (x, y, z, vc)
     V = [0 0 0 x y z -vc*x -vc*y -vc*z];
 end
-
 
 % Compute U (horizontal) for orthographic model
 % x, y, z are intrinsic parameters of the camera with z being kf (depth)
@@ -280,7 +300,6 @@ function Rt = rpyRotation(w, phi, k)
     ];
 end 
 
-% checking
 % r (4x1): initial position; n: rotation axis; theta: rotation angle
 function R = rotateByEquation(r, n, theta)
     v_p = [r(1,2) r(1,3) r(1,4)]; % 0,0,-5
