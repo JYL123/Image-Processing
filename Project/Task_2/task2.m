@@ -104,13 +104,24 @@ P_2 = computeCameraPosition(R2, T2, world_cooridnate);
 M(2, : ) = computePerspective(c_2(1,1), P_2.', R2(1,:), R2(3,:));
 
 % svd
-[U, S, V] = svd(M)
+[U, S, V] = svd(M);
 
 
+TestM = [
+    
+    caliberation_1(1,1)-c_1(1,1)*caliberation_1(3,1) caliberation_1(1,2)-c_1(1,1)*caliberation_1(3,2) caliberation_1(1,3)-c_1(1,1)*caliberation_1(3,3);
+    caliberation_1(2,1)-c_1(2,1)*caliberation_1(3,1) caliberation_1(2,2)-c_1(2,1)*caliberation_1(3,2) caliberation_1(2,3)-c_1(2,1)*caliberation_1(3,3);
+    caliberation_2(1,1)-c_2(1,1)*caliberation_2(3,1) caliberation_2(1,2)-c_2(1,1)*caliberation_2(3,2) caliberation_2(1,3)-c_2(1,1)*caliberation_2(3,3);
+    caliberation_2(2,1)-c_2(2,1)*caliberation_2(3,1) caliberation_2(2,2)-c_2(2,1)*caliberation_2(3,2) caliberation_2(2,3)-c_2(2,1)*caliberation_2(3,3);
 
+    ]
 
+% svd
+[U, S, V] = svd(TestM)
+scene_point_test = [V(1,3); V(2,3); V(3,3)]
 
-
+frame_point = caliberation_3*scene_point_test;
+frame_point = frame_point/frame_point(3,1)
 
 % x and z are 1*3  :1*3
 function M = computePerspective(U, P, x, z) 
@@ -127,6 +138,7 @@ end
 
 
 % a scaling matrix that may make use of rsolution is needed!
+% i equate camera_caliberation as the intrinsic parameter matrix (which may be wrong)
 function H = threeDToTwoD (camera_caliberation, rotation_transformation)
     H = camera_caliberation*rotation_transformation;
 end
