@@ -26,9 +26,9 @@ T1 = [
 cam_pos_1 = R1* world_cooridnate + T1;
 
 caliberation_1 = [
-    870.14531487461625 0 949.42001822880479;
-    0 870.14531487461625 487.20049852775117;
-    0 0 1
+    870.14531487461625 0 949.42001822880479 0;
+    0 870.14531487461625 487.20049852775117 0;
+    0 0 1 0
     ];
 
 % camera 2
@@ -47,9 +47,9 @@ T2 = [
 cam_pos_2 = R2* world_cooridnate + T2;
 
 caliberation_2 = [
-    893.34367240024267 0 949.96816131377727;
-    0 893.34367240024267 546.79562177577259;
-    0 0 1;
+    893.34367240024267 0 949.96816131377727 0;
+    0 893.34367240024267 546.79562177577259 0;
+    0 0 1 0;
     ];
 
 % camera 3
@@ -68,94 +68,74 @@ T3 = [
 cam_pos_3 = R3* world_cooridnate + T3;
 
 caliberation_3 = [
-    872.90852997159800 0 944.45161471037636;
-    0 872.90852997159800 564.47334036925656; 
-    0 0 1;   
+    872.90852997159800 0 944.45161471037636 0;
+    0 872.90852997159800 564.47334036925656 0; 
+    0 0 1 0;   
     ];
 
+% correct data
+% cam_pos:
+T_1 = -inv(R1)*T1;
+T_2 = -inv(R2)*T2;
+T_3 = -inv(R3)*T3;
+% cam_ori:
+R_1 = R1;
+R_2 = R2;
+R_3 = R3;
 
 % test point from frame 3
-c_1 = [544.195114; 297.948346; 1];
-c_2 = [567.523424; 287.74321; 1];
+% 1920 1080, convert picture point to camera image point
+c_1 = [544.195114-1920/2; 297.948346-1080/2; 1];
+c_2 = [567.523424-1920/2; 287.74321-1080/2; 1];
 
-H1 = threeDToTwoD(caliberation_1, cam_pos_1);
-H2 = threeDToTwoD(caliberation_2, cam_pos_2);
 
-M = constructMatrix(H1, c_1, H2, c_2);
+% For camera 1
+U_1  = computePerspectiveU(caliberation_1, R_1, c_1, T_1);
+V_1  = computePerspectiveV(caliberation_1, R_1, c_1, T_1);
 
-% svd
+% For camera 2
+U_2  = computePerspectiveU(caliberation_2, R_2, c_2, T_2);
+V_2  = computePerspectiveV(caliberation_2, R_2, c_2, T_2);
+
+% svd 
+M = zeros(4,4);
+M(1, :) = U_1;
+M(2, :) = V_1;
+M(3, :) = U_2;
+M(4, :) = V_2;
+
 [U, S, V] = svd(M)
-% x, y, z of the scene point
-scene_point_1 = [V(1,3); V(2,3); V(3,3)]
-
-% verfication 
-H3 = threeDToTwoD(caliberation_3, cam_pos_3);
-ans = H3*scene_point_1;
-ans = ans/ans(3,1); % is it because of the scaling factor?
-
-% method 2: use perspective projection directly
-M = zeros(2, 6);
-% compute camera 1 position 
-P_1 = computeCameraPosition(R1, T1, world_cooridnate);
-M(1, : ) = computePerspective(c_1(1,1), P_1.', R1(1,:), R1(3,:));
-
-% compute camera 2 position 
-P_2 = computeCameraPosition(R2, T2, world_cooridnate);
-M(2, : ) = computePerspective(c_2(1,1), P_2.', R2(1,:), R2(3,:));
-
-% svd
-[U, S, V] = svd(M);
 
 
-TestM = [
+function U = computePerspectiveU(caliberation, orientation, twoDpoint, position)
+    a = [caliberation(1,1) caliberation(1,3) -1*twoDpoint(1,1)];
+    b_1 = [orientation(1,1); orientation(3,1); orientation(3,1);];
+    b_2 = [orientation(1,2); orientation(3,2); orientation(3,2);];
+    b_3 = [orientation(1,3); orientation(3,3); orientation(3,3);];
+    b = zeros(3,3)
+    b(:,1) = b_1;
+    b(:,2) = b_2;
+    b(:,3) = b_3;
+    c = position;
     
-    caliberation_1(1,1)-c_1(1,1)*caliberation_1(3,1) caliberation_1(1,2)-c_1(1,1)*caliberation_1(3,2) caliberation_1(1,3)-c_1(1,1)*caliberation_1(3,3);
-    caliberation_1(2,1)-c_1(2,1)*caliberation_1(3,1) caliberation_1(2,2)-c_1(2,1)*caliberation_1(3,2) caliberation_1(2,3)-c_1(2,1)*caliberation_1(3,3);
-    caliberation_2(1,1)-c_2(1,1)*caliberation_2(3,1) caliberation_2(1,2)-c_2(1,1)*caliberation_2(3,2) caliberation_2(1,3)-c_2(1,1)*caliberation_2(3,3);
-    caliberation_2(2,1)-c_2(2,1)*caliberation_2(3,1) caliberation_2(2,2)-c_2(2,1)*caliberation_2(3,2) caliberation_2(2,3)-c_2(2,1)*caliberation_2(3,3);
+    U = [a*b_1 a*b_2 a*b_3 -1*a*b*c]
 
-    ]
-
-% svd
-[U, S, V] = svd(TestM)
-scene_point_test = [V(1,3); V(2,3); V(3,3)]
-
-frame_point = caliberation_3*scene_point_test;
-frame_point = frame_point/frame_point(3,1)
-
-% x and z are 1*3  :1*3
-function M = computePerspective(U, P, x, z) 
-    M = [ U*z(1,1)-x(1,1) U*z(1,2)-x(1,2) U*z(1,3)-x(1,3) -(U*z(1,1)+x(1,1))*P(1,1) -(U*z(1,2)+x(1,2))*P(1,2) -(U*z(1,3)+x(1,3))*P(1,3)];
-end 
-
-% P: 3 by 1
-function P = computeCameraPosition(R, T, origin)
-    P = [R(1,1) R(1,2) R(1,3) T(1,1);
-         R(2,1) R(2,2) R(2,3) T(2,1);
-         R(3,1) R(3,2) R(3,3) T(3,1);
-    ]*[origin(1,1); origin(2,1); origin(3,1); 1];
 end
 
+function V = computePerspectiveV(caliberation, orientation, twoDpoint, position)
+    a = [caliberation(2,2) caliberation(2,3) -1*twoDpoint(2,1)];
+    b_1 = [orientation(2,1); orientation(3,1); orientation(3,1);];
+    b_2 = [orientation(2,2); orientation(3,2); orientation(3,2);];
+    b_3 = [orientation(2,3); orientation(3,3); orientation(3,3);];
+    b = zeros(3,3)
+    b(:,1) = b_1;
+    b(:,2) = b_2;
+    b(:,3) = b_3;
+    c = position;
+    
+    V = [a*b_1 a*b_2 a*b_3 -1*a*b*c]
 
-% a scaling matrix that may make use of rsolution is needed!
-% i equate camera_caliberation as the intrinsic parameter matrix (which may be wrong)
-function H = threeDToTwoD (camera_caliberation, rotation_transformation)
-    H = camera_caliberation*rotation_transformation;
 end
-
-% H is a 3 by 3 matrix , camera_point is 2 by 1
-function M = constructMatrix(H1, camera_point1, H2, camera_point2)
-    M = [
-        H1(1,1) H1(1,2) H1(1,3) - camera_point1(1,1);
-        H1(2,1) H1(2,2) H1(2,3) - camera_point1(2,1);
-        H1(3,1) H1(3,2) H1(3,3) - 1;
-        H2(1,1) H2(1,2) H2(1,3) - camera_point2(1,1);
-        H2(2,1) H2(2,2) H2(2,3) - camera_point2(2,1);
-        H2(3,1) H2(3,2) H2(3,3) - 1;
-    ];
-end 
-
-
 
 
 
