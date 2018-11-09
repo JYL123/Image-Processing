@@ -8,7 +8,7 @@ world_cooridnate = [
     0 0 1;
 ];
 
-%scene_point = [ x; y; z;]
+%scene_point = [ x; y; z; 1]
 
 % camera 1 
 R1 = [
@@ -75,7 +75,7 @@ caliberation_3 = [
 
 % correct data
 % cam_pos:
-T_1 = -inv(R1)*T1;
+T_1 = -inv(R1)*T1
 T_2 = -inv(R2)*T2;
 T_3 = -inv(R3)*T3;
 % cam_ori:
@@ -85,8 +85,12 @@ R_3 = R3;
 
 % test point from frame 3
 % 1920 1080, convert picture point to camera image point
-c_1 = [544.195114-1920/2; 297.948346-1080/2; 1];
-c_2 = [567.523424-1920/2; 287.74321-1080/2; 1];
+% c1: 749.430935, 248.147808
+% c2: 698.955519, 254.998536
+% c_1 = [544.195114-1080/2; 297.948346-1920/2; 1];
+% c_2 = [567.523424-1080/2; 287.74321-1920/2; 1];
+c_1 = [749.430935-1920/2; 248.147808-1080/2; 1];
+c_2 = [698.955519-1920/2; 254.998536-1080/2; 1];
 
 
 % For camera 1
@@ -106,19 +110,100 @@ M(4, :) = V_2;
 
 [U, S, V] = svd(M)
 
+% caliberation =  intrinsic parameter
+% orientation matrix = rotatio matrix
+% position matrix = translation matrix
+
+% For camera 1
+U_11  = computePerspectiveUTest1(caliberation_1, R_1, c_1, T_1);
+V_11  = computePerspectiveVTest1(caliberation_1, R_1, c_1, T_1);
+
+% For camera 2
+U_21  = computePerspectiveUTest1(caliberation_2, R_2, c_2, T_2);
+V_21  = computePerspectiveVTest1(caliberation_2, R_2, c_2, T_2);
+
+% svd 
+ N = zeros(4,4);
+ N(1, :) = U_11;
+ N(2, :) = V_11;
+ N(3, :) = U_21;
+ N(4, :) = V_21;
+% 
+ [U1, S1, V1] = svd(N)
+% 
+% 
+% figure
+% plot3(R_1(1, :), R_1(2, :), R_1(3, :))
+check = [0.2838;
+         -1.1227;
+         -0.1112;]
+     
+%checkpoint(caliberation_3, R_3, T_3, check)
+
+
+function U = computePerspectiveUTest1(caliberation, orientation, twoDpoint, position)
+    a = [caliberation(1,1) caliberation(1,3) -1*twoDpoint(1,1)];
+    b_1 = [orientation(1,1); orientation(3,1); orientation(3,1);];
+    b_2 = [orientation(1,2); orientation(3,2); orientation(3,2);];
+    b_3 = [orientation(1,3); orientation(3,3); orientation(3,3);];
+    b = zeros(3,3);
+    b(:,1) = b_1;
+    b(:,2) = b_2;
+    b(:,3) = b_3;
+    c_11 = [position(1,1); position(3,1); position(3,1);];
+    U = [a*b_1 a*b_2 a*b_3 a*c_11];
+    
+    %method 2:
+%     Extrinsic = [  
+%             orientation(1,1) orientation(1,2) orientation(1,3) position(1,1);
+%             orientation(2,1) orientation(2,2) orientation(2,3) position(2,1);
+%             orientation(3,1) orientation(3,2) orientation(3,3) position(3,1);
+%             0 0 0 1;
+%         ];
+%     X = caliberation*Extrinsic; % resulting 3 by 4 matrix 
+%     U = [twoDpoint(1,1)*X(3,1)-X(1,1) twoDpoint(1,1)*X(3,2)-X(1,2) twoDpoint(1,1)*X(3,3)-X(1,3) twoDpoint(1,1)*X(3,4)-X(1,4)]
+    
+    
+
+end
+
+function V = computePerspectiveVTest1(caliberation, orientation, twoDpoint, position)
+    a = [caliberation(2,2) caliberation(2,3) -1*twoDpoint(2,1)];
+    b_1 = [orientation(2,1); orientation(3,1); orientation(3,1);];
+    b_2 = [orientation(2,2); orientation(3,2); orientation(3,2);];
+    b_3 = [orientation(2,3); orientation(3,3); orientation(3,3);];
+    b = zeros(3,3);
+    b(:,1) = b_1;
+    b(:,2) = b_2;
+    b(:,3) = b_3;
+    c_22 = [position(2,1); position(3,1); position(3,1);];
+    V = [a*b_1 a*b_2 a*b_3 a*c_22];
+    
+    %method 2:
+     Extrinsic = [  
+             orientation(1,1) orientation(1,2) orientation(1,3) position(1,1);
+             orientation(2,1) orientation(2,2) orientation(2,3) position(2,1);
+             orientation(3,1) orientation(3,2) orientation(3,3) position(3,1);
+             0 0 0 1;  
+         ];
+
+%     X = caliberation*Extrinsic; % resulting 3 by 4 matrix 
+%     V = [twoDpoint(2,1)*X(2,1)-X(1,1) twoDpoint(2,1)*X(3,2)-X(2,2) twoDpoint(2,1)*X(3,3)-X(2,3) twoDpoint(2,1)*X(3,4)-X(2,4)]
+
+end
 
 function U = computePerspectiveU(caliberation, orientation, twoDpoint, position)
     a = [caliberation(1,1) caliberation(1,3) -1*twoDpoint(1,1)];
     b_1 = [orientation(1,1); orientation(3,1); orientation(3,1);];
     b_2 = [orientation(1,2); orientation(3,2); orientation(3,2);];
     b_3 = [orientation(1,3); orientation(3,3); orientation(3,3);];
-    b = zeros(3,3)
-    b(:,1) = b_1;
-    b(:,2) = b_2;
-    b(:,3) = b_3;
+    b = zeros(1,3);
+    b(1,1) = a*b_1;
+    b(1,2) = a*b_2;
+    b(1,3) = a*b_3;
     c = position;
     
-    U = [a*b_1 a*b_2 a*b_3 -1*a*b*c]
+    U = [b(:,1) b(:,2) b(:,3) -1*b*c];
 
 end
 
@@ -127,13 +212,27 @@ function V = computePerspectiveV(caliberation, orientation, twoDpoint, position)
     b_1 = [orientation(2,1); orientation(3,1); orientation(3,1);];
     b_2 = [orientation(2,2); orientation(3,2); orientation(3,2);];
     b_3 = [orientation(2,3); orientation(3,3); orientation(3,3);];
-    b = zeros(3,3)
-    b(:,1) = b_1;
-    b(:,2) = b_2;
-    b(:,3) = b_3;
+    b = zeros(1,3)
+    b(1,1) = a*b_1;
+    b(1,2) = a*b_2;
+    b(1,3) = a*b_3;
     c = position;
     
-    V = [a*b_1 a*b_2 a*b_3 -1*a*b*c]
+    V = [b(:,1) b(:,2) b(:,3) -1*b*c];
+
+end
+
+function checkpoint(caliberation, orientation, twoDpoint, position, check)
+    % diff 3*1 matrix
+    diff = check-position;
+   
+    u_upper = caliberation(1,3)*diff*orientation(1,:);
+    u_lower = diff*orientation(3,:);
+    
+   
+    
+
+u = caliberation(1, 3)*orientation(1,:)
 
 end
 
