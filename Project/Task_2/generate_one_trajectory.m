@@ -80,16 +80,9 @@ R_1 = R1;
 R_2 = R2;
 R_3 = R3;
 
-%camera data
-% camera 1 data
-%c_1 = [526.492588/2-1920/2; 301.481624-1080/2; 1];
-% camera 2 data
-%c_2 = [558.150011-1920/2; 288.28514-1080/2; 1];
-% camera 3 data
-%c_3 = [1375.548521-1920/2; 252.074613-1080/2; 1];
-
+% camera image point data
 % read data from csv file
-% undistort_x: a n by 1 matrix
+% undistort_x: n by 1 matrix; undistort_xy: n by 2 matrix
 cam1_undistort_xy = csvread("CAM1-GOPR0334-36441.csv",20,3);
 cam2_undistort_xy = csvread("CAM2-GOPR0289-36404.csv",20,3);
 cam3_undistort_xy = csvread("CAM3-GOPR0343-36320.csv",20,3);
@@ -97,6 +90,7 @@ cam3_undistort_xy = csvread("CAM3-GOPR0343-36320.csv",20,3);
 % matrix to store 3D point ball location
 threeD_points = zeros(256, 3);
 
+% take the first 50 points because they are more accurate, error is small
 for row = 1 : 50
     % camera 1 point
     c1_u = cam1_undistort_xy(row, 1)-1920/2;
@@ -109,7 +103,7 @@ for row = 1 : 50
     c3_v = cam3_undistort_xy(row, 2)-1080/2;
 
         
-    % check point == 0 
+    % if a point is missing, we should abort the operation in case of big errors 
     if c1_u(1,1) == 0 || c2_u(1,1) == 0 
          display(row)
          break;
@@ -139,15 +133,23 @@ for row = 1 : 50
 
     [U, S, V] = svd(N);
     
+    % normalize the point, because we want the last element in 3D point to be 1 (refer to line 11)
     threeD_point = [V(1,4)/V(4,4), V(2,4)/V(4,4), V(3,4)/V(4,4)];
     threeD_points(row, :) = threeD_point;
     
 end
+
+% write computed 3D points to a csv file
 csvwrite('myData.txt', threeD_points)
 
+% with perspective equation, derive the matrix A, where Ax = 0, to be solved by svd
+% each pair of camera image point (u,v) gives 2 rows of A, where these two rows are 
+% computed by methods mappingX and mappinY
 function row = mappingX(caliberation, orientation, twoDpoint_u, position)
     uc = twoDpoint_u;
     f=caliberation(1,1);
+    % substract resolution from offset becasue offset is measured wrt the top left corner of
+    % of the picture, rather than the center of the camera image, which is where camera image point (u, v) is based on
     u0=caliberation(1,3)-1920/2;
     ix=orientation(1,1);
     iy=orientation(1,2);
@@ -159,6 +161,7 @@ function row = mappingX(caliberation, orientation, twoDpoint_u, position)
     ty=position(2,1);
     tz=position(3,1);
     
+    % derived from perspective equation
     row = [f*ix+kx*u0-uc*kx f*iy+ky*u0-uc*ky f*iz+kz*u0-uc*kz -tx*(f*ix+kx*u0-uc*kx)-ty*(f*iy+ky*u0-uc*ky)-tz*(f*iz+kz*u0-uc*kz) ]
     
 end 
@@ -181,7 +184,7 @@ function row = mappingY(caliberation, orientation, twoDpoint_v, position)
     
 end 
 
-% helper function to check generated 3d point
+% helper function to check generated 3d point. The equation is generated based on perspective equations
 function c = checkpoint(caliberation, orientation, position, check)
     % diff 3*1 matrix
     diff = check-position;
