@@ -18,15 +18,11 @@ args = vars(ap.parse_args())
 # define the lower and upper boundaries of the "green"
 # ball in the HSV color space, then initialize the
 # list of tracked points
-
-#greenLower = (29, 86, 6)
-#greenUpper = (64, 255, 255)
 greenLower = (0, 0, 0)
 greenUpper = (200, 200, 100)
 pts = deque(maxlen=args["buffer"])
 
-# if a video path was not supplied, grab the reference
-# to the webcam
+# if a video path was not supplied, grab the reference to the webcam
 if not args.get("video", False):
     vs = VideoStream(src=0).start()
 
@@ -55,34 +51,21 @@ while True:
     # resize the frame, blur it, and convert it to the HSV
     # color space
     frame_copy = frame.copy()
-    #print(np.shape(frame)) # 1920 1080 3
     first_frame = frame[260:295, 490:1200]
-    second_frame = frame[295:340, 490:1200]
-    #cv2.imshow('secFrame', second_frame)
-
+   
     # for the first frame
     blurred = cv2.GaussianBlur(first_frame, (11, 11), 0)
     hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
 
-    # for the seond frame
-    second_blurred = cv2.GaussianBlur(second_frame, (11, 11), 0)
-    second_hsv = cv2.cvtColor(second_blurred, cv2.COLOR_BGR2HSV)
-
-    # for the first frame
     # construct a mask for the color "green", then perform
     # a series of dilations and erosions to remove any small
     # blobs left in the mask
     mask = cv2.inRange(hsv, greenLower, greenUpper)
     mask = 255 - mask
-    #mask = cv2.erode(mask, None, iterations=2)
-    #mask = cv2.dilate(mask, None, iterations=2)
-    cv2.imshow('mask', mask)
-    # print(mask)
-
-    # for the second frame
-    second_mask = cv2.inRange(second_hsv, greenLower, greenUpper)
-    second_mask = 255 - second_mask
-    cv2.imshow('mask', second_mask)
+    
+    # for small object, this is not needed. for large object, this is needed.
+    # mask = cv2.erode(mask, None, iterations=2)
+    # mask = cv2.dilate(mask, None, iterations=2)
 
     # find contours in the mask and initialize the current
     # (x, y) center of the ball
@@ -124,8 +107,9 @@ while True:
         thickness = int(np.sqrt(args["buffer"] / float(i + 1)) * 2.5)
         cv2.line(first_frame, pts[i - 1], pts[i], (0, 0, 255), thickness)
 
-    # show the frame to our screen
+    # embed the cropped picture into the original frame to reconstruct the frame
     frame_copy[260:295, 490:1200] = first_frame
+    # show the frame to our screen
     cv2.imshow("Frame", frame_copy)
     key = cv2.waitKey(1) & 0xFF
 
