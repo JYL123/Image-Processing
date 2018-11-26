@@ -18,10 +18,10 @@ sumFrame = read(video, 1);
 sumFrame = double(sumFrame);
 
 for frame =2 : numberOfFrames
-    % Extract the frame from the movie structure.
-	thisFrame = read(video, frame);
+    thisFrame = read(video, frame);
     thisFrame = double(thisFrame);
     
+    % averaging the frame to extract the background
     sumFrame = (1/frame)*thisFrame + sumFrame*((frame-1)/frame); 
 end
 %sumFrame = double(sumFrame);
