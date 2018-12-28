@@ -1,4 +1,7 @@
 # Image-Processing
+This repo holds several basic image processing techniques written in Matlab. To undertsand how each technique works, no built-in functions are used except in `Project` folder, `Opencv` is used for object tracking.  
+
+
 ## Understanding cameras
 * [Pinhole camera](https://www.khanacademy.org/partner-content/pixar/virtual-cameras/virtual-cameras-1/v/virtual-cameras)
 * [SLR camera](https://www.youtube.com/watch?v=2tiqxiHnv1M)
